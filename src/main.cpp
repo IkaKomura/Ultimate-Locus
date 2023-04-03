@@ -80,10 +80,12 @@ uint8_t countConnectedDevices(uint8_t deviceId) {
 
 // Print RSSI values to the Serial Monitor
 void printRSSIValues() {
-    Serial.println("RSSI values:");
+    bool hasConnections = false;
+
     for (uint8_t i = 0; i < MAX_DEVICES; i++) {
         uint8_t connectedDevices = countConnectedDevices(i);
         if (connectedDevices > 0) {
+            hasConnections = true;
             Serial.print("Device ");
             Serial.print(i);
             Serial.print(" is connected to ");
@@ -102,8 +104,14 @@ void printRSSIValues() {
             }
         }
     }
+
+    if (!hasConnections) {
+        Serial.println("No available devices.");
+    }
+
     Serial.println();
 }
+
 
 
 void setup() {
