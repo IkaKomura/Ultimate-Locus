@@ -44,9 +44,18 @@ class ScanCallback : public NimBLEAdvertisedDeviceCallbacks {
 
             // Store the RSSI value for the detected device
             storeRSSI(id, rssi);
+
+            // Parse advertised data to get RSSI values from the detected device
+            std::string advertisedData = advertisedDevice->getManufacturerData();
+            for (size_t i = 1; i < advertisedData.size(); i += 2) {
+                uint8_t deviceId = advertisedData[i];
+                int deviceRssi = advertisedData[i + 1];
+                rssiValues[deviceId][DEVICE_ID] = deviceRssi;
+            }
         }
     }
 };
+
 
 
 // Print RSSI values to the Serial Monitor
