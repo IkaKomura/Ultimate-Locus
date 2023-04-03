@@ -3,7 +3,7 @@
 #include <NimBLEDevice.h>
 
 // Unique device ID
-const uint8_t DEVICE_ID = 1; // Make sure to set a unique ID for each device
+const uint8_t DEVICE_ID = 2; // Make sure to set a unique ID for each device
 
 // BLE UUIDs
 #define SERVICE_UUID "0000ABCD-0000-1000-8000-00805F9B34FB"
@@ -14,12 +14,23 @@ const uint8_t DEVICE_ID = 1; // Make sure to set a unique ID for each device
 // RSSI values matrix
 int rssiValues[MAX_DEVICES][MAX_DEVICES] = {0};
 
+void resetRSSIValues() {
+    for (uint8_t i = 0; i < MAX_DEVICES; i++) {
+        for (uint8_t j = 0; j < MAX_DEVICES; j++) {
+            rssiValues[i][j] = 0;
+        }
+    }
+}
+
+
 // Store RSSI value for a device
 void storeRSSI(uint8_t deviceId, int rssi) {
     if (deviceId < MAX_DEVICES) {
         rssiValues[DEVICE_ID][deviceId] = rssi;
     }
 }
+
+
 
 // Advertise device ID, service UUID, and RSSI values for other nodes
 void startAdvertising() {
@@ -56,15 +67,32 @@ class ScanCallback : public NimBLEAdvertisedDeviceCallbacks {
     }
 };
 
+uint8_t countConnectedDevices(uint8_t deviceId) {
+    uint8_t count = 0;
+    for (uint8_t i = 0; i < MAX_DEVICES; i++) {
+        if (rssiValues[deviceId][i] != 0) {
+            count++;
+        }
+    }
+    return count;
+}
 
 
 // Print RSSI values to the Serial Monitor
 void printRSSIValues() {
     Serial.println("RSSI values:");
     for (uint8_t i = 0; i < MAX_DEVICES; i++) {
+        uint8_t connectedDevices = countConnectedDevices(i);
+        if (connectedDevices > 0) {
+            Serial.print("Device ");
+            Serial.print(i);
+            Serial.print(" is connected to ");
+            Serial.print(connectedDevices);
+            Serial.println(" devices.");
+        }
         for (uint8_t j = 0; j < MAX_DEVICES; j++) {
             if (rssiValues[i][j] != 0) {
-                Serial.print("Device ");
+                Serial.print("  Device ");
                 Serial.print(i);
                 Serial.print(" -> ");
                 Serial.print("Device ");
@@ -77,6 +105,7 @@ void printRSSIValues() {
     Serial.println();
 }
 
+
 void setup() {
     // Initialize serial communication
     Serial.begin(115200);
@@ -88,17 +117,22 @@ void setup() {
     // Start advertising
     startAdvertising();
 }
-
+//
 ScanCallback scanCallback;
+
 void loop() {
+    // Reset the RSSI values matrix
+    resetRSSIValues();
+
     // Start BLE scan
     NimBLEScan *pScan = NimBLEDevice::getScan();
     pScan->setAdvertisedDeviceCallbacks(&scanCallback);
     pScan->setActiveScan(true);
     pScan->setInterval(100);
     pScan->setWindow(99);
-    pScan->start(0, nullptr); // Set the scan duration to 0 for continuous scanning
+    pScan->start(0, nullptr);
 
     // Print RSSI values to the Serial Monitor
     printRSSIValues();
 }
+
