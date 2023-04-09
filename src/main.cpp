@@ -7,7 +7,7 @@ int tInterval = 300; // Scan interval in milliseconds
 int tWindow = 200; // Scan window in milliseconds
 
 // Unique device ID
-const uint8_t DEVICE_ID = 2; // Make sure to set a unique ID for each device
+const uint8_t DEVICE_ID = 1; // Make sure to set a unique ID for each device
 
 // BLE UUIDs
 #define SERVICE_UUID "0000ABCD-0000-1000-8000-00805F9B34FB"
@@ -52,38 +52,69 @@ void startAdvertising() {
 
     advData.setFlags(ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT);
     advData.setCompleteServices(NimBLEUUID(SERVICE_UUID));
-    advData.setManufacturerData(std::string((char *)&DEVICE_ID, 1));
 
+    std::string manufData(1 + MAX_DEVICES * 3, 0); // Allocate space for device ID and RSSI values
+    manufData[0] = DEVICE_ID;
+
+    for (uint8_t i = 0; i < MAX_DEVICES; i++) {
+        if (rssiValues[DEVICE_ID][i] != 0) {
+            manufData[1 + i * 3] = i;
+            int16_t rssiValue = rssiValues[DEVICE_ID][i];
+            manufData[2 + i * 3] = rssiValue & 0xFF; // lower byte of the RSSI value
+            manufData[3 + i * 3] = (rssiValue >> 8) & 0xFF; // upper byte of the RSSI value
+        }
+    }
+
+    advData.setManufacturerData(manufData);
     pAdvertising->setAdvertisementData(advData);
     pAdvertising->start();
 }
 
+
+
 // Scan callback class
 class ScanCallback : public NimBLEAdvertisedDeviceCallbacks {
-    void onResult(NimBLEAdvertisedDevice* advertisedDevice) {
-        Serial.println("Device found during scan...");
+void onResult(NimBLEAdvertisedDevice* advertisedDevice) {
+    Serial.println("Device found during scan...");
 
-        // Check if the advertised device is one of our mesh devices
-        if (advertisedDevice->haveServiceUUID() && advertisedDevice->isAdvertisingService(NimBLEUUID(SERVICE_UUID)) && advertisedDevice->getManufacturerData().length() > 0) {
+    if (advertisedDevice->haveServiceUUID()) {
+        Serial.print("  Advertised Service UUID: ");
+        Serial.println(advertisedDevice->getServiceUUID().toString().c_str());
+    }
+
+    if (advertisedDevice->getManufacturerData().length() > 0) {
+        Serial.print("  Manufacturer data: ");
+        Serial.println(advertisedDevice->getManufacturerData().c_str());
+    }
+
+    // Check if the advertised device is one of our mesh devices
+    if (advertisedDevice->haveServiceUUID() && advertisedDevice->isAdvertisingService(NimBLEUUID(SERVICE_UUID))) {
+        std::string manufData = advertisedDevice->getManufacturerData();
+
+        if (manufData.length() > 0 && manufData[0] != DEVICE_ID) {
             Serial.println("Device is advertising the correct service UUID...");
-            uint8_t id = advertisedDevice->getManufacturerData()[0];
+            uint8_t id = manufData[0];
             int rssi = advertisedDevice->getRSSI();
 
             // Store the RSSI value for the detected device
             storeRSSI(id, rssi);
 
             // Parse advertised data to get RSSI values from the detected device
-            std::string advertisedData = advertisedDevice->getManufacturerData();
-            for (size_t i = 1; i < advertisedData.size(); i += 2) {
-                uint8_t deviceId = advertisedData[i];
-                int deviceRssi = advertisedData[i + 1];
+            for (size_t i = 1; i < manufData.size(); i += 3) {
+                uint8_t deviceId = manufData[i];
+                int16_t deviceRssi = manufData[i + 1] | (manufData[i + 2] << 8);
                 rssiValues[deviceId][DEVICE_ID] = deviceRssi;
             }
         } else {
             Serial.println("Device is not advertising the correct service UUID...");
         }
     }
+}
+
+
+
 };
+
 
 
 
@@ -155,6 +186,7 @@ void loop() {
     // Reset the RSSI values matrix
     resetRSSIValues();
 
+
     // Start BLE scan
     NimBLEScan *pScan = NimBLEDevice::getScan();
     pScan->setAdvertisedDeviceCallbacks(&scanCallback);
@@ -163,7 +195,12 @@ void loop() {
     pScan->setWindow(tWindow);
     pScan->start(0, nullptr);
 
+
+    // Update advertising data with new RSSI values
+    startAdvertising();
+
     // Print RSSI values to the Serial Monitor
     printRSSIValues();
     delay(tDly);
 }
+
