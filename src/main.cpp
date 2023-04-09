@@ -2,6 +2,10 @@
 
 #include <NimBLEDevice.h>
 
+int tDly = 3000; // Delay in milliseconds
+int tInterval = 300; // Scan interval in milliseconds
+int tWindow = 200; // Scan window in milliseconds
+
 // Unique device ID
 const uint8_t DEVICE_ID = 2; // Make sure to set a unique ID for each device
 
@@ -13,6 +17,15 @@ const uint8_t DEVICE_ID = 2; // Make sure to set a unique ID for each device
 
 // RSSI values matrix
 int rssiValues[MAX_DEVICES][MAX_DEVICES] = {0};
+
+void printStartupMessage() {
+    Serial.println("=====================================");
+    Serial.println("       ESP32 BLE Mesh Device");
+    Serial.print("       Device ID: ");
+    Serial.println(DEVICE_ID);
+    Serial.println("=====================================");
+    Serial.println();
+}
 
 void resetRSSIValues() {
     for (uint8_t i = 0; i < MAX_DEVICES; i++) {
@@ -48,8 +61,11 @@ void startAdvertising() {
 // Scan callback class
 class ScanCallback : public NimBLEAdvertisedDeviceCallbacks {
     void onResult(NimBLEAdvertisedDevice* advertisedDevice) {
+        Serial.println("Device found during scan...");
+
         // Check if the advertised device is one of our mesh devices
-        if (advertisedDevice->haveServiceUUID() && advertisedDevice->isAdvertisingService(NimBLEUUID(SERVICE_UUID))) {
+        if (advertisedDevice->haveServiceUUID() && advertisedDevice->isAdvertisingService(NimBLEUUID(SERVICE_UUID)) && advertisedDevice->getManufacturerData().length() > 0) {
+            Serial.println("Device is advertising the correct service UUID...");
             uint8_t id = advertisedDevice->getManufacturerData()[0];
             int rssi = advertisedDevice->getRSSI();
 
@@ -63,9 +79,13 @@ class ScanCallback : public NimBLEAdvertisedDeviceCallbacks {
                 int deviceRssi = advertisedData[i + 1];
                 rssiValues[deviceId][DEVICE_ID] = deviceRssi;
             }
+        } else {
+            Serial.println("Device is not advertising the correct service UUID...");
         }
     }
 };
+
+
 
 uint8_t countConnectedDevices(uint8_t deviceId) {
     uint8_t count = 0;
@@ -117,6 +137,9 @@ void printRSSIValues() {
 void setup() {
     // Initialize serial communication
     Serial.begin(115200);
+    delay(1000);
+    // Print startup message
+    printStartupMessage();  
 
     // Initialize BLE
     NimBLEDevice::init("ESP32-S3_BLE_MESH");
@@ -136,11 +159,11 @@ void loop() {
     NimBLEScan *pScan = NimBLEDevice::getScan();
     pScan->setAdvertisedDeviceCallbacks(&scanCallback);
     pScan->setActiveScan(true);
-    pScan->setInterval(100);
-    pScan->setWindow(99);
+    pScan->setInterval(tInterval);
+    pScan->setWindow(tWindow);
     pScan->start(0, nullptr);
 
     // Print RSSI values to the Serial Monitor
     printRSSIValues();
+    delay(tDly);
 }
-
