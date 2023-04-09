@@ -53,15 +53,13 @@ void startAdvertising() {
     advData.setFlags(ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT);
     advData.setCompleteServices(NimBLEUUID(SERVICE_UUID));
 
-    std::string manufData(1 + MAX_DEVICES * 3, 0); // Allocate space for device ID and RSSI values
+    std::string manufData(1 + MAX_DEVICES * 2, 0); // Allocate space for device ID and RSSI values
     manufData[0] = DEVICE_ID;
 
     for (uint8_t i = 0; i < MAX_DEVICES; i++) {
         if (rssiValues[DEVICE_ID][i] != 0) {
-            manufData[1 + i * 3] = i;
-            int16_t rssiValue = rssiValues[DEVICE_ID][i];
-            manufData[2 + i * 3] = rssiValue & 0xFF; // lower byte of the RSSI value
-            manufData[3 + i * 3] = (rssiValue >> 8) & 0xFF; // upper byte of the RSSI value
+            manufData[1 + i * 2] = i;
+            manufData[2 + i * 2] = rssiValues[DEVICE_ID][i];
         }
     }
 
@@ -69,6 +67,9 @@ void startAdvertising() {
     pAdvertising->setAdvertisementData(advData);
     pAdvertising->start();
 }
+
+
+
 
 
 
@@ -100,9 +101,9 @@ void onResult(NimBLEAdvertisedDevice* advertisedDevice) {
             storeRSSI(id, rssi);
 
             // Parse advertised data to get RSSI values from the detected device
-            for (size_t i = 1; i < manufData.size(); i += 3) {
+            for (size_t i = 1; i < manufData.size(); i += 2) {
                 uint8_t deviceId = manufData[i];
-                int16_t deviceRssi = manufData[i + 1] | (manufData[i + 2] << 8);
+                int deviceRssi = (int8_t)manufData[i + 1];
                 rssiValues[deviceId][DEVICE_ID] = deviceRssi;
             }
         } else {
@@ -110,6 +111,8 @@ void onResult(NimBLEAdvertisedDevice* advertisedDevice) {
         }
     }
 }
+
+
 
 
 
