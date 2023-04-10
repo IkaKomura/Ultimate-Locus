@@ -3,6 +3,6 @@
 
 #include <stdint.h>
 
-extern const uint8_t DEVICE_ID;
+extern const uint8_t device_ID;
 
 #endif /* DEVICE_ID_H */

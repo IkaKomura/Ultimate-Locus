@@ -1,5 +1,5 @@
 #include <Arduino.h>
-
+#include "DEVICE_ID.c"
 #include <NimBLEDevice.h>
 
 int tDly = 3000; // Delay in milliseconds
@@ -7,7 +7,7 @@ int tInterval = 300; // Scan interval in milliseconds
 int tWindow = 200; // Scan window in milliseconds
 
 // Unique device ID
-const uint8_t DEVICE_ID = DEVICE_ID; // Make sure to set a unique ID for each device
+const uint8_t DEVICE_ID = device_ID; // Make sure to set a unique ID for each device
 
 // BLE UUIDs
 #define SERVICE_UUID "0000ABCD-0000-1000-8000-00805F9B34FB"
