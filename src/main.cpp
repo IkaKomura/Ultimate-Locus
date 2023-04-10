@@ -6,6 +6,18 @@ int tDly = 3000; // Delay in milliseconds
 int tInterval = 300; // Scan interval in milliseconds
 int tWindow = 200; // Scan window in milliseconds
 
+//////////////// Function prototypes/////////////////////////////
+
+void printStartupMessage();
+void resetRSSIValues();
+void storeRSSI(uint8_t deviceId, int rssi);
+void startMessageAdvertising();
+void startAdvertising();
+uint8_t countConnectedDevices(uint8_t deviceId);
+void printRSSIValues();
+void printReceivedMessage(const std::string &message);
+
+
 // Unique device ID
 const uint8_t DEVICE_ID = device_ID; // Make sure to set a unique ID for each device
 
@@ -40,6 +52,21 @@ void storeRSSI(uint8_t deviceId, int rssi) {
     if (deviceId < MAX_DEVICES) {
         rssiValues[DEVICE_ID][deviceId] = rssi;
     }
+}
+
+// Advertise a test message
+void startMessageAdvertising() {
+    NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
+    NimBLEAdvertisementData advData;
+
+    advData.setFlags(ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT);
+    advData.setCompleteServices(NimBLEUUID(SERVICE_UUID));
+
+    std::string message = "Hello, this is a test message!";
+    advData.setManufacturerData(message);
+
+    pAdvertising->setAdvertisementData(advData);
+    pAdvertising->start();
 }
 
 // Advertise device ID, service UUID, and RSSI values for other nodes
@@ -84,6 +111,13 @@ void onResult(NimBLEAdvertisedDevice* advertisedDevice) {
     if (advertisedDevice->haveServiceUUID() && advertisedDevice->isAdvertisingService(NimBLEUUID(SERVICE_UUID))) {
         std::string manufData = advertisedDevice->getManufacturerData();
 
+        // Check if the advertised data contains the message
+        if (manufData.find("Hello, this is a test message!") != std::string::npos) {
+            printReceivedMessage(manufData);
+        } else {
+            Serial.println("Device is not advertising the message...");
+        }
+
         if (manufData.length() > 0 && manufData[0] != DEVICE_ID) {
             Serial.println("Device is advertising the correct service UUID...");
             uint8_t id = manufData[0];
@@ -103,8 +137,9 @@ void onResult(NimBLEAdvertisedDevice* advertisedDevice) {
         Serial.println("Device is not advertising the correct service UUID...");
         return;
     }
-    }
+}
 };
+
 
 uint8_t countConnectedDevices(uint8_t deviceId) {
     uint8_t count = 0;
@@ -149,10 +184,16 @@ void printRSSIValues() {
 
     Serial.println();
 }
+// Print test message to the Serial Monitor
+void printReceivedMessage(const std::string &message) {
+    Serial.print("  Received message: ");
+    Serial.println(message.c_str());
+}
 
 void setup() {
     // Initialize serial communication
     Serial.begin(115200);
+    // Wait for serial monitor to open
     delay(1000);
     // Print startup message
     printStartupMessage();  
@@ -160,8 +201,10 @@ void setup() {
     // Initialize BLE
     NimBLEDevice::init("ESP32-S3_BLE_MESH");
     NimBLEDevice::setPower(ESP_PWR_LVL_P9);
-
-    // Start advertising
+    //wait for initialization
+    delay(1000);
+    
+// Start advertising
     startAdvertising();
 }
 //
