@@ -35,15 +35,12 @@ void resetRSSIValues() {
     }
 }
 
-
 // Store RSSI value for a device
 void storeRSSI(uint8_t deviceId, int rssi) {
     if (deviceId < MAX_DEVICES) {
         rssiValues[DEVICE_ID][deviceId] = rssi;
     }
 }
-
-
 
 // Advertise device ID, service UUID, and RSSI values for other nodes
 void startAdvertising() {
@@ -67,11 +64,6 @@ void startAdvertising() {
     pAdvertising->setAdvertisementData(advData);
     pAdvertising->start();
 }
-
-
-
-
-
 
 // Scan callback class
 class ScanCallback : public NimBLEAdvertisedDeviceCallbacks {
@@ -106,20 +98,13 @@ void onResult(NimBLEAdvertisedDevice* advertisedDevice) {
                 int deviceRssi = (int8_t)manufData[i + 1];
                 rssiValues[deviceId][DEVICE_ID] = deviceRssi;
             }
-        } else {
-            Serial.println("Device is not advertising the correct service UUID...");
         }
+    } else {
+        Serial.println("Device is not advertising the correct service UUID...");
+        return;
     }
-}
-
-
-
-
-
+    }
 };
-
-
-
 
 uint8_t countConnectedDevices(uint8_t deviceId) {
     uint8_t count = 0;
@@ -130,7 +115,6 @@ uint8_t countConnectedDevices(uint8_t deviceId) {
     }
     return count;
 }
-
 
 // Print RSSI values to the Serial Monitor
 void printRSSIValues() {
@@ -166,8 +150,6 @@ void printRSSIValues() {
     Serial.println();
 }
 
-
-
 void setup() {
     // Initialize serial communication
     Serial.begin(115200);
@@ -189,7 +171,6 @@ void loop() {
     // Reset the RSSI values matrix
     resetRSSIValues();
 
-
     // Start BLE scan
     NimBLEScan *pScan = NimBLEDevice::getScan();
     pScan->setAdvertisedDeviceCallbacks(&scanCallback);
@@ -198,7 +179,6 @@ void loop() {
     pScan->setWindow(tWindow);
     pScan->start(0, nullptr);
 
-
     // Update advertising data with new RSSI values
     startAdvertising();
 
@@ -206,4 +186,3 @@ void loop() {
     printRSSIValues();
     delay(tDly);
 }
-
