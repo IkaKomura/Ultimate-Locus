@@ -62,13 +62,16 @@ void startMessageAdvertising() {
     advData.setFlags(ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT);
     advData.setCompleteServices(NimBLEUUID(SERVICE_UUID));
 
-    std::string message = "Hello, this is a test message! From device " + std::to_string(DEVICE_ID);
+    std::string message = "Hello, this is a test message!";
     advData.setManufacturerData(message);
+
+    // Debugging: Print the manufacturer data being set
+    Serial.print("Setting manufacturer data for advertising: ");
+    Serial.println(message.c_str());
 
     pAdvertising->setAdvertisementData(advData);
     pAdvertising->start();
 }
-
 
 // Advertise device ID, service UUID, and RSSI values for other nodes
 void startAdvertising() {
@@ -112,8 +115,15 @@ class ScanCallback : public NimBLEAdvertisedDeviceCallbacks {
         if (advertisedDevice->haveServiceUUID() && advertisedDevice->isAdvertisingService(NimBLEUUID(SERVICE_UUID))) {
             std::string manufData = advertisedDevice->getManufacturerData();
 
-            // Check if the advertised data contains the message
-            if (manufData.find("Hello, this is a test message! From device ") != std::string::npos) {
+            // Debugging: print the first 30 characters of the manufacturer data
+            Serial.print("  First 30 chars of manufData: ");
+            Serial.println(manufData.substr(0, 30).c_str());
+
+            // Debugging: print the expected message substring
+            Serial.println("  Expected message substring: Hello, this is a test message!");
+
+            // Check if the advertised data contains the modified message
+            if (manufData.substr(0, 30) == "Hello, this is a test message!") {
                 printReceivedMessage(manufData);
             } else {
                 Serial.println("Device is not advertising the message...");
@@ -123,11 +133,6 @@ class ScanCallback : public NimBLEAdvertisedDeviceCallbacks {
                 Serial.println("Device is advertising the correct service UUID...");
                 uint8_t id = manufData[0];
                 int rssi = advertisedDevice->getRSSI();
-
-                Serial.print("  Detected Device ID: ");
-                Serial.println(id);
-                Serial.print("  Detected Device RSSI: ");
-                Serial.println(rssi);
 
                 // Store the RSSI value for the detected device
                 storeRSSI(id, rssi);
@@ -145,8 +150,6 @@ class ScanCallback : public NimBLEAdvertisedDeviceCallbacks {
         }
     }
 };
-
-
 
 uint8_t countConnectedDevices(uint8_t deviceId) {
     uint8_t count = 0;
@@ -214,7 +217,7 @@ void setup() {
 // Start advertising
     startAdvertising();
 }
-//
+
 ScanCallback scanCallback;
 
 void loop() {
