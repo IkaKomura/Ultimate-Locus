@@ -62,12 +62,13 @@ void startMessageAdvertising() {
     advData.setFlags(ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT);
     advData.setCompleteServices(NimBLEUUID(SERVICE_UUID));
 
-    std::string message = "Hello, this is a test message!";
+    std::string message = "Hello, this is a test message! From device " + std::to_string(DEVICE_ID);
     advData.setManufacturerData(message);
 
     pAdvertising->setAdvertisementData(advData);
     pAdvertising->start();
 }
+
 
 // Advertise device ID, service UUID, and RSSI values for other nodes
 void startAdvertising() {
@@ -94,51 +95,57 @@ void startAdvertising() {
 
 // Scan callback class
 class ScanCallback : public NimBLEAdvertisedDeviceCallbacks {
-void onResult(NimBLEAdvertisedDevice* advertisedDevice) {
-    Serial.println("Device found during scan...");
+    void onResult(NimBLEAdvertisedDevice* advertisedDevice) {
+        Serial.println("Device found during scan...");
 
-    if (advertisedDevice->haveServiceUUID()) {
-        Serial.print("  Advertised Service UUID: ");
-        Serial.println(advertisedDevice->getServiceUUID().toString().c_str());
-    }
-
-    if (advertisedDevice->getManufacturerData().length() > 0) {
-        Serial.print("  Manufacturer data: ");
-        Serial.println(advertisedDevice->getManufacturerData().c_str());
-    }
-
-    // Check if the advertised device is one of our mesh devices
-    if (advertisedDevice->haveServiceUUID() && advertisedDevice->isAdvertisingService(NimBLEUUID(SERVICE_UUID))) {
-        std::string manufData = advertisedDevice->getManufacturerData();
-
-        // Check if the advertised data contains the message
-        if (manufData.find("Hello, this is a test message!") != std::string::npos) {
-            printReceivedMessage(manufData);
-        } else {
-            Serial.println("Device is not advertising the message...");
+        if (advertisedDevice->haveServiceUUID()) {
+            Serial.print("  Advertised Service UUID: ");
+            Serial.println(advertisedDevice->getServiceUUID().toString().c_str());
         }
 
-        if (manufData.length() > 0 && manufData[0] != DEVICE_ID) {
-            Serial.println("Device is advertising the correct service UUID...");
-            uint8_t id = manufData[0];
-            int rssi = advertisedDevice->getRSSI();
+        if (advertisedDevice->getManufacturerData().length() > 0) {
+            Serial.print("  Manufacturer data: ");
+            Serial.println(advertisedDevice->getManufacturerData().c_str());
+        }
 
-            // Store the RSSI value for the detected device
-            storeRSSI(id, rssi);
+        // Check if the advertised device is one of our mesh devices
+        if (advertisedDevice->haveServiceUUID() && advertisedDevice->isAdvertisingService(NimBLEUUID(SERVICE_UUID))) {
+            std::string manufData = advertisedDevice->getManufacturerData();
 
-            // Parse advertised data to get RSSI values from the detected device
-            for (size_t i = 1; i < manufData.size(); i += 2) {
-                uint8_t deviceId = manufData[i];
-                int deviceRssi = (int8_t)manufData[i + 1];
-                rssiValues[deviceId][DEVICE_ID] = deviceRssi;
+            // Check if the advertised data contains the message
+            if (manufData.find("Hello, this is a test message! From device ") != std::string::npos) {
+                printReceivedMessage(manufData);
+            } else {
+                Serial.println("Device is not advertising the message...");
             }
+
+            if (manufData.length() > 0 && manufData[0] != DEVICE_ID) {
+                Serial.println("Device is advertising the correct service UUID...");
+                uint8_t id = manufData[0];
+                int rssi = advertisedDevice->getRSSI();
+
+                Serial.print("  Detected Device ID: ");
+                Serial.println(id);
+                Serial.print("  Detected Device RSSI: ");
+                Serial.println(rssi);
+
+                // Store the RSSI value for the detected device
+                storeRSSI(id, rssi);
+
+                // Parse advertised data to get RSSI values from the detected device
+                for (size_t i = 1; i < manufData.size(); i += 2) {
+                    uint8_t deviceId = manufData[i];
+                    int deviceRssi = (int8_t)manufData[i + 1];
+                    rssiValues[deviceId][DEVICE_ID] = deviceRssi;
+                }
+            }
+        } else {
+            Serial.println("Device is not advertising the correct service UUID...");
+            return;
         }
-    } else {
-        Serial.println("Device is not advertising the correct service UUID...");
-        return;
     }
-}
 };
+
 
 
 uint8_t countConnectedDevices(uint8_t deviceId) {
