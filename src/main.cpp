@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include "DEVICE_ID.c"
 #include <NimBLEDevice.h>
-//#include <TFT_eSPI.h>
 #include "SerialAndTFT.h"
 #include "BLEMesh.h"
 
@@ -11,8 +10,6 @@ int tWindow = 200; // Scan window in milliseconds
 
 TFT_eSPI tft = TFT_eSPI();
 SerialAndTFT output(tft);
-
-
 
 void setup() {
     // Initialize serial communication

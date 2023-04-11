@@ -17,22 +17,17 @@ uint8_t countConnectedDevices(uint8_t deviceId);
 void printRSSIValues();
 void printReceivedMessage(const std::string &message);
 
-
+/////////////////////// Global variables /////////////////////////
 // Unique device ID
 const uint8_t DEVICE_ID = device_ID; // Make sure to set a unique ID for each device
-
-
-
 // BLE UUIDs
 #define SERVICE_UUID "0000ABCD-0000-1000-8000-00805F9B34FB"
-
 // Maximum number of devices
 #define MAX_DEVICES 10
-
 // RSSI values matrix
 int rssiValues[MAX_DEVICES][MAX_DEVICES] = {0};
-// Function declarations and class definitions go here
 
+// Function declarations and class definitions go here
 // Connected devices count
 uint8_t countConnectedDevices(uint8_t deviceId) {
     uint8_t count = 0;
@@ -44,7 +39,9 @@ uint8_t countConnectedDevices(uint8_t deviceId) {
     return count;
 }
 
-// Scan callback class
+// Classes and functions go here
+
+// Scan callback class!!!!!!!!
 class ScanCallback : public NimBLEAdvertisedDeviceCallbacks {
     void onResult(NimBLEAdvertisedDevice* advertisedDevice) {
         Serial.println("Device found during scan...");
@@ -164,9 +161,6 @@ void startAdvertising() {
     pAdvertising->setAdvertisementData(advData);
     pAdvertising->start();
 }
-
-
-
 
 
 // Print RSSI values to the Serial Monitor
