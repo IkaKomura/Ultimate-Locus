@@ -3,8 +3,11 @@
 
 #include <Arduino.h>
 #include <NimBLEDevice.h>
-#include "DEVICE_ID.c"
+#include "DEVICE_ID.h"
+#include "SerialAndTFT.h"
 
+TFT_eSPI tft = TFT_eSPI(); // Initialize the TFT display object
+SerialAndTFT DualOutput(tft); // Create an instance of SerialAndTFT named 'DualOutput' and pass a reference to the TFT display object
 
 //////////////// Function prototypes/////////////////////////////
 
@@ -97,7 +100,7 @@ class ScanCallback : public NimBLEAdvertisedDeviceCallbacks {
 };
 
 void printStartupMessage() {
-    Serial.println("=====================================");
+    DualOutput.println("=====================================");
     Serial.println("       ESP32 BLE Mesh Device");
     Serial.print("       Device ID: ");
     Serial.println(DEVICE_ID);

@@ -8,13 +8,13 @@ int tDly = 3000; // Delay in milliseconds
 int tInterval = 300; // Scan interval in milliseconds
 int tWindow = 200; // Scan window in milliseconds
 
-TFT_eSPI tft = TFT_eSPI();
-SerialAndTFT output(tft);
+
 
 void setup() {
     // Initialize serial communication
     Serial.begin(115200);
     // Wait for serial monitor to open
+    tft.begin();
     delay(1000);
     // Print startup message
     printStartupMessage();  
