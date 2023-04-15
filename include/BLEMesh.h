@@ -1,3 +1,5 @@
+//file: BLEMesh.h
+
 #ifndef BLE_MESH_H
 #define BLE_MESH_H
 
@@ -47,16 +49,16 @@ uint8_t countConnectedDevices(uint8_t deviceId) {
 // Scan callback class!!!!!!!!
 class ScanCallback : public NimBLEAdvertisedDeviceCallbacks {
     void onResult(NimBLEAdvertisedDevice* advertisedDevice) {
-        Serial.println("Device found during scan...");
+        DualOutput.println("Device found during scan...");
 
         if (advertisedDevice->haveServiceUUID()) {
-            Serial.print("  Advertised Service UUID: ");
-            Serial.println(advertisedDevice->getServiceUUID().toString().c_str());
+            DualOutput.print("  Advertised Service UUID: ");
+            DualOutput.println(advertisedDevice->getServiceUUID().toString().c_str());
         }
 
         if (advertisedDevice->getManufacturerData().length() > 0) {
-            Serial.print("  Manufacturer data: ");
-            Serial.println(advertisedDevice->getManufacturerData().c_str());
+            DualOutput.print("  Manufacturer data: ");
+            DualOutput.println(advertisedDevice->getManufacturerData().c_str());
         }
 
         // Check if the advertised device is one of our mesh devices
@@ -64,21 +66,21 @@ class ScanCallback : public NimBLEAdvertisedDeviceCallbacks {
             std::string manufData = advertisedDevice->getManufacturerData();
 
             // Debugging: print the first 30 characters of the manufacturer data
-            Serial.print("  First 30 chars of manufData: ");
-            Serial.println(manufData.substr(0, 30).c_str());
+            DualOutput.print("  First 30 chars of manufData: ");
+            DualOutput.println(manufData.substr(0, 30).c_str());
 
             // Debugging: print the expected message substring
-            Serial.println("  Expected message substring: Hello, this is a test message!");
+            DualOutput.println("  Expected message substring: Hello, this is a test message!");
 
             // Check if the advertised data contains the modified message
             if (manufData.substr(0, 30) == "Hello, this is a test message!") {
                 printReceivedMessage(manufData);
             } else {
-                Serial.println("Device is not advertising the message...");
+                DualOutput.println("Device is not advertising the message...");
             }
 
             if (manufData.length() > 0 && manufData[0] != DEVICE_ID) {
-                Serial.println("Device is advertising the correct service UUID...");
+                DualOutput.println("Device is advertising the correct service UUID...");
                 uint8_t id = manufData[0];
                 int rssi = advertisedDevice->getRSSI();
 
@@ -93,7 +95,7 @@ class ScanCallback : public NimBLEAdvertisedDeviceCallbacks {
                 }
             }
         } else {
-            Serial.println("Device is not advertising the correct service UUID...");
+            DualOutput.println("Device is not advertising the correct service UUID...");
             return;
         }
     }
@@ -101,11 +103,11 @@ class ScanCallback : public NimBLEAdvertisedDeviceCallbacks {
 
 void printStartupMessage() {
     DualOutput.println("=====================================");
-    Serial.println("       ESP32 BLE Mesh Device");
-    Serial.print("       Device ID: ");
-    Serial.println(DEVICE_ID);
-    Serial.println("=====================================");
-    Serial.println();
+    DualOutput.println("       ESP32 BLE Mesh Device");
+    DualOutput.print("       Device ID: ");
+    DualOutput.println(DEVICE_ID);
+    DualOutput.println("=====================================");
+    DualOutput.println();
 }
 
 void resetRSSIValues() {
@@ -135,8 +137,8 @@ void startMessageAdvertising() {
     advData.setManufacturerData(message);
 
     // Debugging: Print the manufacturer data being set
-    Serial.print("Setting manufacturer data for advertising: ");
-    Serial.println(message.c_str());
+    DualOutput.print("Setting manufacturer data for advertising: ");
+    DualOutput.println(message.c_str());
 
     pAdvertising->setAdvertisementData(advData);
     pAdvertising->start();
@@ -174,35 +176,35 @@ void printRSSIValues() {
         uint8_t connectedDevices = countConnectedDevices(i);
         if (connectedDevices > 0) {
             hasConnections = true;
-            Serial.print("Device ");
-            Serial.print(i);
-            Serial.print(" is connected to ");
-            Serial.print(connectedDevices);
-            Serial.println(" devices.");
+            DualOutput.print("Device ");
+            DualOutput.print(i);
+            DualOutput.print(" is connected to ");
+            DualOutput.print(connectedDevices);
+            DualOutput.println(" devices.");
         }
         for (uint8_t j = 0; j < MAX_DEVICES; j++) {
             if (rssiValues[i][j] != 0) {
-                Serial.print("  Device ");
-                Serial.print(i);
-                Serial.print(" -> ");
-                Serial.print("Device ");
-                Serial.print(j);
-                Serial.print(": ");
-                Serial.println(rssiValues[i][j]);
+                DualOutput.print("  Device ");
+                DualOutput.print(i);
+                DualOutput.print(" -> ");
+                DualOutput.print("Device ");
+                DualOutput.print(j);
+                DualOutput.print(": ");
+                DualOutput.println(rssiValues[i][j]);
             }
         }
     }
 
     if (!hasConnections) {
-        Serial.println("No available devices.");
+        DualOutput.println("No available devices.");
     }
 
-    Serial.println();
+    DualOutput.println();
 }
 // Print test message to the Serial Monitor
 void printReceivedMessage(const std::string &message) {
-    Serial.print("  Received message: ");
-    Serial.println(message.c_str());
+    DualOutput.print("  Received message: ");
+    DualOutput.println(message.c_str());
 }
 
 #endif // BLE_MESH_H
